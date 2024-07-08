@@ -1,17 +1,16 @@
 with orders as  (
-    select * from {{ ref ('stage_jaffle_shop__orders' )}}
+    select * from {{ ref ('stage_jaffle_shop__orders') }} 
 ),
 
 payments as (
-    select * from {{ ref ('stage_stripe__payments') }}
+    select * from {{ ref ('stage_stripe__payments' )}}
 ),
-
 order_payments as (
     select
-        order_id,
-        sum (case when status = 'success' then amount end) as amount
+        orders.order_id,
+        sum (case when orders.status = 'completed' then payments.amount end) as amount
 
-    from payments
+    from orders join payments
     group by 1
 ),
 
@@ -24,7 +23,7 @@ order_payments as (
         coalesce (order_payments.amount, 0) as amount
 
     from orders
-    left join order_payments using (order_id)
+    left join order_payments on orders.order_id=order_payments.order_id
 )
 
 select * from final
